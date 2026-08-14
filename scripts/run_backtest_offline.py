@@ -8,6 +8,7 @@ to the normal freqtrade CLI. The backtest maths run exactly as usual on the
 local (synthetic) OHLCV data.
 """
 
+import json
 import sys
 
 import ccxt
@@ -16,7 +17,23 @@ from freqtrade.exchange.exchange import Exchange
 from freqtrade.util.datetime_helpers import dt_ts
 
 
-PAIRS = ["BTC/USDT", "ETH/USDT", "SOL/USDT"]
+def _pairs_from_argv() -> list[str]:
+    """Read the exchange pair_whitelist from the --config file passed on the CLI."""
+    argv = sys.argv[1:]
+    for i, a in enumerate(argv):
+        if a in ("-c", "--config") and i + 1 < len(argv):
+            try:
+                with open(argv[i + 1]) as fh:
+                    cfg = json.load(fh)
+                pairs = cfg.get("exchange", {}).get("pair_whitelist")
+                if pairs:
+                    return pairs
+            except Exception:
+                pass
+    return ["BTC/USDT", "ETH/USDT", "SOL/USDT"]
+
+
+PAIRS = _pairs_from_argv()
 TIMEFRAMES = {tf: tf for tf in ("1m", "5m", "15m", "1h", "4h", "1d")}
 
 
