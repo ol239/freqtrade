@@ -1,0 +1,114 @@
+name: Download market data
+
+# Downloads OHLCV data on GitHub's runners (which have internet access to the
+# exchanges) and commits it back into market_data/<exchange>/ so it can be used
+# for backtesting. Two ways to run it:
+#   1. Edit market_data/request.json and push  -> auto-runs with those params.
+#   2. Actions tab -> "Download market data" -> "Run workflow" (fill the fields).
+
+on:
+  workflow_dispatch:
+    inputs:
+      exchange:
+        description: "Exchange"
+        default: "binance"
+        required: true
+      pairs:
+        description: "Space-separated pairs, e.g. BTC/USDT ETH/USDT"
+        default: "BTC/USDT ETH/USDT SOL/USDT"
+        required: true
+      timeframes:
+        description: "Space-separated timeframes, e.g. 5m 1h"
+        default: "5m 1h"
+        required: true
+      timerange:
+        description: "Timerange, e.g. 20240101-20250101"
+        default: "20240101-20250101"
+        required: true
+  push:
+    paths:
+      - "market_data/request.json"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: download-market-data-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  download:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install freqtrade
+        run: pip install freqtrade
+
+      - name: Resolve parameters
+        id: params
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          IN_EX: ${{ github.event.inputs.exchange }}
+          IN_PAIRS: ${{ github.event.inputs.pairs }}
+          IN_TFS: ${{ github.event.inputs.timeframes }}
+          IN_RANGE: ${{ github.event.inputs.timerange }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            EX="$IN_EX"
+            PAIRS="$IN_PAIRS"
+            TFS="$IN_TFS"
+            RANGE="$IN_RANGE"
+          else
+            EX="$(jq -r '.exchange' market_data/request.json)"
+            PAIRS="$(jq -r '.pairs | join(" ")' market_data/request.json)"
+            TFS="$(jq -r '.timeframes | join(" ")' market_data/request.json)"
+            RANGE="$(jq -r '.timerange' market_data/request.json)"
+          fi
+          {
+            echo "exchange=$EX"
+            echo "pairs=$PAIRS"
+            echo "timeframes=$TFS"
+            echo "timerange=$RANGE"
+          } >> "$GITHUB_OUTPUT"
+          echo "Resolved: exchange=$EX | pairs=$PAIRS | timeframes=$TFS | timerange=$RANGE"
+
+      - name: Download data
+        env:
+          EX: ${{ steps.params.outputs.exchange }}
+          PAIRS: ${{ steps.params.outputs.pairs }}
+          TFS: ${{ steps.params.outputs.timeframes }}
+          RANGE: ${{ steps.params.outputs.timerange }}
+        run: |
+          set -euo pipefail
+          freqtrade download-data \
+            --exchange "$EX" \
+            --datadir "market_data/$EX" \
+            --pairs $PAIRS \
+            --timeframes $TFS \
+            --timerange "$RANGE" \
+            --data-format-ohlcv feather \
+            --erase
+
+      - name: List downloaded data
+        env:
+          EX: ${{ steps.params.outputs.exchange }}
+        run: ls -lh "market_data/$EX" || true
+
+      - name: Commit data back to the branch
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add market_data
+          if git diff --cached --quiet; then
+            echo "No data changes to commit."
+          else
+            git commit -m "data: download market data via workflow [skip ci]"
+            git push
+          fi
