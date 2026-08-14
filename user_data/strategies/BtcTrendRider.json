@@ -1,0 +1,12 @@
+{
+    "strategy_name": "BtcTrendRider",
+    "params": {
+        "buy": {
+            "fast_ma": 58,
+            "trend_ma": 189
+        },
+        "sell": {
+            "atr_mult": 6.7
+        }
+    }
+}
