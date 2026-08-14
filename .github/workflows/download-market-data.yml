@@ -46,8 +46,8 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install freqtrade
-        run: pip install freqtrade
+      - name: Install freqtrade (from this repo, for the data.binance.vision path)
+        run: pip install -e .
 
       - name: Resolve parameters
         id: params
