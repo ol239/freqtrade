@@ -90,12 +90,20 @@ def _empty_ohlcv(self, *args, **kwargs) -> DataFrame:
     return DataFrame(columns=DEFAULT_DATAFRAME_COLUMNS)
 
 
+async def _empty_candle_history(self, pair, timeframe, candle_type, since_ms=None):
+    # Binance.get_historic_ohlcv makes a REST "new pair listing date" probe
+    # (since_ms=0) before choosing the vision path; return no candles so it
+    # keeps the requested start date and never hits api.binance.com.
+    return (pair, timeframe, candle_type, [])
+
+
 Exchange.reload_markets = _patched_reload_markets
 Exchange.validate_pairs = lambda self, pairs: None
 Exchange._load_async_markets = lambda self, reload=False: None
 # Binance.get_historic_ohlcv_fast calls super().get_historic_ohlcv (this base
 # method) for the not-yet-archived tail; stub it so it never touches the REST API.
 Exchange.get_historic_ohlcv = _empty_ohlcv
+Exchange._async_get_candle_history = _empty_candle_history
 
 from freqtrade.main import main  # noqa: E402
 
