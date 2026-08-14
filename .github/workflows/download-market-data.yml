@@ -86,14 +86,28 @@ jobs:
           RANGE: ${{ steps.params.outputs.timerange }}
         run: |
           set -euo pipefail
-          freqtrade download-data \
-            --exchange "$EX" \
-            --datadir "market_data/$EX" \
-            --pairs $PAIRS \
-            --timeframes $TFS \
-            --timerange "$RANGE" \
-            --data-format-ohlcv feather \
-            --erase
+          # GitHub runners are US-based; api.binance.com returns HTTP 451 there.
+          # download_data_vision.py sources data from data.binance.vision instead
+          # (works for spot 1m/3m/5m). For other exchanges, use the plain CLI.
+          if [ "$EX" = "binance" ]; then
+            python scripts/download_data_vision.py download-data \
+              --exchange "$EX" \
+              --datadir "market_data/$EX" \
+              --pairs $PAIRS \
+              --timeframes $TFS \
+              --timerange "$RANGE" \
+              --data-format-ohlcv feather \
+              --erase
+          else
+            freqtrade download-data \
+              --exchange "$EX" \
+              --datadir "market_data/$EX" \
+              --pairs $PAIRS \
+              --timeframes $TFS \
+              --timerange "$RANGE" \
+              --data-format-ohlcv feather \
+              --erase
+          fi
 
       - name: List downloaded data
         env:

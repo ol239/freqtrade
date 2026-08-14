@@ -1,6 +1,6 @@
 {
     "exchange": "binance",
     "pairs": ["BTC/USDT", "ETH/USDT"],
-    "timeframes": ["1h"],
+    "timeframes": ["5m"],
     "timerange": "20240101-20250101"
 }
