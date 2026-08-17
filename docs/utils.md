@@ -406,6 +406,32 @@ Print trades with id 2 and 3 as json
 freqtrade show-trades --db-url sqlite:///tradesv3.sqlite --trade-ids 2 3 --print-json
 ```
 
+## Trading coach
+
+Analyze the closed trades stored in the database and print a "trader profile" report:
+win-rate, profit factor, expectancy, streaks, position-sizing consistency, exit-reason
+breakdown and more, together with rule-based coaching feedback highlighting patterns
+worth addressing (overtrading, revenge-trading streaks, inconsistent position sizing, ...).
+
+Freqtrade only trades crypto markets, so this report is limited to the trades recorded in
+its own database - it does not analyze stock trading.
+
+--8<-- "commands/trading-coach.md"
+
+### Examples
+
+Print the trading-coach report for the trades in your live/dry-run database:
+
+``` bash
+freqtrade trading-coach --db-url sqlite:///tradesv3.sqlite
+```
+
+Get the report as JSON, for example to feed it into another tool:
+
+``` bash
+freqtrade trading-coach --db-url sqlite:///tradesv3.sqlite --print-json
+```
+
 ## Strategy-Updater
 
 Updates listed strategies or all strategies within the strategies folder to be v3 compliant.

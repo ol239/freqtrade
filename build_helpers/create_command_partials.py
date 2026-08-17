@@ -52,6 +52,7 @@ def extract_command_partials():
         "list-freqaimodels",
         "list-timeframes",
         "show-trades",
+        "trading-coach",
         "test-pairlist",
         "convert-db",
         "install-ui",

@@ -216,6 +216,8 @@ ARGS_INSTALL_UI = ["erase_ui_only", "ui_prerelease", "ui_version"]
 
 ARGS_SHOW_TRADES = ["db_url", "trade_ids", "print_json"]
 
+ARGS_TRADING_COACH = ["db_url", "print_json"]
+
 ARGS_HYPEROPT_LIST = [
     "hyperopt_list_best",
     "hyperopt_list_profitable",
@@ -299,6 +301,7 @@ NO_CONF_REQURIED = [
     "install-ui",
     "strategy-updater",
     "trades-to-ohlcv",
+    "trading-coach",
 ]
 
 NO_CONF_ALLOWED = ["create-userdir", "list-exchanges", "new-strategy"]
@@ -414,6 +417,7 @@ class Arguments:
             start_strategy_update,
             start_test_pairlist,
             start_trading,
+            start_trading_coach,
             start_webserver,
         )
 
@@ -638,6 +642,15 @@ class Arguments:
         )
         show_trades.set_defaults(func=start_show_trades)
         self._build_args(optionlist=ARGS_SHOW_TRADES, parser=show_trades)
+
+        # Add trading-coach subcommand
+        trading_coach_cmd = subparsers.add_parser(
+            "trading-coach",
+            help="Analyze trades from the database and print a trader-profile coaching report.",
+            parents=[_common_parser],
+        )
+        trading_coach_cmd.set_defaults(func=start_trading_coach)
+        self._build_args(optionlist=ARGS_TRADING_COACH, parser=trading_coach_cmd)
 
         # Add test-pairlist subcommand
         test_pairlist_cmd = subparsers.add_parser(

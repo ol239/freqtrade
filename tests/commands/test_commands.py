@@ -33,6 +33,7 @@ from freqtrade.commands import (
     start_strategy_update,
     start_test_pairlist,
     start_trading,
+    start_trading_coach,
     start_webserver,
 )
 from freqtrade.commands.deploy_ui import (
@@ -2003,6 +2004,53 @@ def test_show_trades(mocker, fee, capsys, caplog):
 
     with pytest.raises(OperationalException, match=r"--db-url is required for this command."):
         start_show_trades(pargs)
+
+
+@pytest.mark.usefixtures("init_persistence")
+def test_start_trading_coach(mocker, fee, capsys):
+    mocker.patch("freqtrade.data.btanalysis.bt_fileutils.init_db")
+    create_mock_trades(fee, False)
+    args = ["trading-coach", "--db-url", "sqlite:///"]
+    pargs = get_args(args)
+    pargs["config"] = None
+    start_trading_coach(pargs)
+    captured = capsys.readouterr()
+    assert "TRADER PROFILE" in captured.out
+    # Only the two closed mock trades are counted, the rest stay open.
+    assert "Closed / Open trades" in captured.out
+    assert "2 / 4" in captured.out
+    assert "Coaching feedback:" in captured.out
+    assert "Only 2 closed trades available" in captured.out
+
+    args = ["trading-coach", "--db-url", "sqlite:///", "--print-json"]
+    pargs = get_args(args)
+    pargs["config"] = None
+    start_trading_coach(pargs)
+    captured = capsys.readouterr()
+    result = json.loads(captured.out)
+    assert result["stats"]["trade_count"] == 2
+    assert isinstance(result["feedback"], list)
+    assert len(result["feedback"]) > 0
+
+    args = [
+        "trading-coach",
+    ]
+    pargs = get_args(args)
+    pargs["config"] = None
+
+    with pytest.raises(OperationalException, match=r"--db-url is required for this command."):
+        start_trading_coach(pargs)
+
+
+@pytest.mark.usefixtures("init_persistence")
+def test_start_trading_coach_no_trades(mocker, capsys):
+    mocker.patch("freqtrade.data.btanalysis.bt_fileutils.init_db")
+    args = ["trading-coach", "--db-url", "sqlite:///"]
+    pargs = get_args(args)
+    pargs["config"] = None
+    start_trading_coach(pargs)
+    captured = capsys.readouterr()
+    assert "No closed trades found - nothing to analyze yet." in captured.out
 
 
 def test_backtesting_show(mocker, testdatadir, capsys):

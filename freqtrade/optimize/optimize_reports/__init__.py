@@ -11,6 +11,11 @@ from freqtrade.optimize.optimize_reports.bt_output import (
     text_table_tags,
 )
 from freqtrade.optimize.optimize_reports.bt_storage import store_backtest_results
+from freqtrade.optimize.optimize_reports.coach_report import (
+    generate_coach_feedback,
+    generate_trading_coach_report,
+    text_table_coach_report,
+)
 from freqtrade.optimize.optimize_reports.optimize_reports import (
     convert_bt_wallet_collection,
     generate_all_periodic_breakdown_stats,
